@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emissão de Certificado</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 26px;
+      color: #5e4b8b;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #6c5ce7;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    button:hover {
+      background-color: #5a4bcf;
+    }
+
+    .certificate {
+      background: linear-gradient(135deg, #a2c2e9, #c3d9f3);
+      padding: 40px;
+      margin-top: 20px;
+      display: none;
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      min-height: 300px;
+    }
+
+    .certificate::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 0;
+      width: 100%;
+      height: 10px;
+      background: #a2c2e9;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .certificate h2 {
+      color: #fff;
+      font-size: 28px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .certificate p {
+      font-size: 18px;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .certificate .strong {
+      font-weight: 700;
+    }
+
+    .certificate .signature {
+      margin-top: 40px;
+      font-size: 18px;
+      font-style: italic;
+      color: #fff;
+    }
+
+    #btn-download {
+      margin-top: 20px;
+      display: none;
+    }
+
+    .line {
+      width: 50%;
+      height: 3px;
+      background-color: #fff;
+      margin: 20px auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Insira seu nome aqui</h1>
+    <form id="form-cert">
+      <input type="text" id="nome" placeholder="Digite seu nome completo" required />
+      <input type="text" id="curso" placeholder="Digite o nome do curso" required />
+      <button type="submit">Gerar Certificado</button>
+    </form>
+
+    <div id="certificado" class="certificate">
+      <h2>Certificado de Conclusão</h2>
+      <p>Certificamos que <strong id="nome-cert" class="strong"></strong></p>
+      <p>concluiu com êxito o curso de <strong id="curso-cert" class="strong"></strong></p>
+      <div class="line"></div>
+      <p>no dia <span id="data-cert"></span></p>
+      <p class="signature">_________________________<br>Assinatura</p>
+    </div>
+
+    <button id="btn-download">Baixar em PDF</button>
+  </div>
+
+  <!-- jsPDF e html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script>
+    const form = document.getElementById('form-cert');
+    const certDiv = document.getElementById('certificado');
+    const btnDownload = document.getElementById('btn-download');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nome = document.getElementById('nome').value;
+      const curso = document.getElementById('curso').value;
+      const data = new Date().toLocaleDateString('pt-BR');
+
+      document.getElementById('nome-cert').innerText = nome;
+      document.getElementById('curso-cert').innerText = curso;
+      document.getElementById('data-cert').innerText = data;
+
+      certDiv.style.display = 'block';
+      btnDownload.style.display = 'inline-block';
+    });
+
+    btnDownload.addEventListener('click', function() {
+      html2canvas(certDiv, { scale: 3, useCORS: true }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jspdf.jsPDF('landscape', 'mm', 'a4');
+
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        // Ajustar para evitar o corte da parte de baixo
+        pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth - 20, pdfHeight - 20);
+        pdf.save('certificado.pdf');
+
+        // Resetar o formulário e voltar ao estado inicial
+        document.getElementById('form-cert').reset();
+        certDiv.style.display = 'none';
+        btnDownload.style.display = 'none';
+      });
+    });
+  </script>
+</body>
+</html>
